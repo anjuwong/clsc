@@ -84,17 +84,11 @@ def main():
                         print profs[j]
                         print allTimes[j].find("span","bold").string+" "+\
                             allDays[j].find("span","bold").string+" "+\
-                            allEnroll[j].find("span","bold").string+" "+\
+                            allEnroll[j].find("span","bold").string+"/"+\
                             allCap[j].find("span","bold").string
                             
                     except:
                         continue
-                
-                #for prof in profs:
-                #    print term+" "+subj+" "+courses[i]+" "+prof
-                
-                
-    return
 
 if __name__ == "__main__":
     main()
