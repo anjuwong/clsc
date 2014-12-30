@@ -1,0 +1,6 @@
+Term | Dept | Class | Prof | Time | ECount | ETotal | Timestamp
+
+TermID,Term,Dept,Class
+TermID,LectID,Prof,Time,EnrollTotal
+LectID,EnrollCount,Timestamp
+
