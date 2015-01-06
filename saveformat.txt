@@ -1,6 +1,48 @@
 Term | Dept | Class | Prof | Time | ECount | ETotal | Timestamp
+================================================================================
+COURSE: CourseID,Term,Dept,Class
+    PRIMARY KEY: courseid
 
-TermID,Term,Dept,Class
-TermID,LectID,Prof,Time,EnrollTotal
-LectID,EnrollCount,Timestamp
+    CREATE TABLE Course 
+    (courseid SMALLINT UNSIGNED NOT NULL, 
+    term VARCHAR(8), 
+    dept VARCHAR(16), 
+    class VARCHAR(8), 
+    PRIMARY KEY (courseid));
+--------------------------------------------------------------------------------
+LECT: CourseID,LectID,Prof,Time,EnrollTotal
+    PRIMARY KEY: lectid
+    FOREIGN KEY: courseid
 
+    CREATE TABLE Lect 
+    (courseid SMALLINT UNSIGNED, 
+    lectid MEDIUMINT UNSIGNED NOT NULL,
+    prof VARCHAR(32),
+    time VARCHAR(16), 
+    enrolltotal SMALLINT UNSIGNED, 
+    PRIMARY KEY (lectid), 
+    FOREIGN KEY (courseid) REFERENCES Course ON DELETE CASCADE);
+--------------------------------------------------------------------------------
+ENROLL: LectID,EnrollCount,Timestamp
+    FOREIGN KEY: lectid
+    ON UPDATE: check if duplicate has same enrollcount
+                if so, replace entry, else create new entry
+
+    CREATE TABLE Enroll 
+    (lectid MEDIUMINT UNSIGNED, 
+    enrollcount SMALLINT UNSIGNED, 
+    timestamp DATE, 
+    FOREIGN KEY (lectid) REFERENCES Lect);
+
+    DELIMITER $$
+    CREATE TRIGGER CheckDuplicate
+    BEFORE INSERT ON Enroll
+    FOR EACH ROW
+    BEGIN
+        DELETE FROM Enroll
+        WHERE lectid = NEW.lectid AND
+            Enroll.enrollcount = NEW.enrollcount AND
+            Enroll.timestamp = (SELECT MAX(timestamp) 
+                                FROM Enroll
+                                WHERE lectid = NEW.lectid)
+    END $$ DELIMITER;

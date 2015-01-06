@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import MySQLdb
 import urllib
 from bs4 import BeautifulSoup
 from HTMLParser import HTMLParser
@@ -10,6 +11,11 @@ from HTMLParser import HTMLParser
 #<submit> btnGetClasses = ctl00_BodyContentPlaceHolder_SOCmain_btnGetClasses -> getBtn
 # for timestamps, only remember the most recent one if no change
 def main():
+    f = open("../mysqlinfo")
+    usrnm = f.readline()[:-1]  
+    psswd = f.readline()[:-1]
+    con = MySQLdb.connect("localhost",usrnm,psswd,"registrar")
+    cur = con.cursor()
     lstTermDisp = "ctl00_BodyContentPlaceHolder_SOCmain_lstTermDisp"
     lstSubjectArea = "ctl00_BodyContentPlaceHolder_SOCmain_lstSubjectArea"
     btnGetClasses = "ctl00_BodyContentPlaceHolder_SOCmain_btnGetClasses"
@@ -41,7 +47,7 @@ def main():
     subjVals = [opt['value'] for opt in subjSoup.find_all('option')]
     print subjVals
 
-    termId = 0
+    courseId = 0
     lectId = 0
     # class coursehead
     # class fachead
@@ -49,7 +55,7 @@ def main():
     # class dgdClassDataTimeEnd
     # class dgdClassDataEnrollTotal
     # class dgdClassDataEnrollCap
-    # style border-width:0px;border-style:None;border-collapse:collapse;
+    # TODO: Ensure that the lectId and courseId are unique and constant
     for term in termVals:
         for subj in subjVals:
             if term == '141' or term == '15S':
@@ -66,6 +72,7 @@ def main():
                 continue
             print term+" "+subj+" ============"
             print courses
+
             # params is a list of URL tails for the given term
             params = [urllib.urlencode({'termsel':term,'subareasel':subj,'idxcrs':course})\
                  for course in courses]
@@ -74,11 +81,15 @@ def main():
                 crsSoup = BeautifulSoup(str(crsRes.read()))
                 # Remove 3 characters from the prof name for &nlbs
                 profs = [str(fac.string[3:]) for fac in crsSoup.find_all('span','fachead')]
+                
+                # all_ are lists of all the _ tags, not necessarily the first ones
+                # The first rows (class info, not disc info) are distinctly bolded
                 allTimes = [t for t in crsSoup.find_all('td','dgdClassDataTimeStart')]
                 allDays = [d for d in crsSoup.find_all('td','dgdClassDataDays')]
                 allEnroll = [e for e in crsSoup.find_all('td','dgdClassDataEnrollTotal')]
                 allCap = [c for c in crsSoup.find_all('td','dgdClassDataEnrollCap')]
                 print term+" "+subj+" "+courses[i]
+                cur.execute("INSERT INTO Course VALUES ("+str(courseId)+",'"+term+"','"+subj+"','"+courses[i]+"')")
                 for j in range(len(profs)):
                     try:
                         print profs[j]
@@ -86,9 +97,20 @@ def main():
                             allDays[j].find("span","bold").string+" "+\
                             allEnroll[j].find("span","bold").string+"/"+\
                             allCap[j].find("span","bold").string
+
+                        cur.execute("INSERT INTO Lect VALUES ("+str(courseId)+","+str(lectId)+",'"+profs[j]+"','"+\
+                            allTimes[j].find("span","bold").string+" "+\
+                            allDays[j].find("span","bold").string+"','"+\
+                            allCap[j].find("span","bold").string+"')")
+
+                        cur.execute("INSERT INTO Enroll VALUES ("+str(lectId)+",'"+\
+                        allEnroll[j].find("span","bold").string+\
+                        "',CURDATE())")
+                        
+                        lectId += 1
                             
                     except:
                         continue
-
+                courseId += 1
 if __name__ == "__main__":
     main()
