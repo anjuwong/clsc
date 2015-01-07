@@ -25,8 +25,8 @@ LECT: CourseID,LectID,Prof,Time,EnrollTotal
 --------------------------------------------------------------------------------
 ENROLL: LectID,EnrollCount,Timestamp
     FOREIGN KEY: lectid
-    ON UPDATE: check if duplicate has same enrollcount
-                if so, replace entry, else create new entry
+    ON UPDATE: check if most recent entry has same enrollcount
+                if not, insert
 
     CREATE TABLE Enroll 
     (lectid MEDIUMINT UNSIGNED, 
@@ -34,15 +34,17 @@ ENROLL: LectID,EnrollCount,Timestamp
     timestamp DATE, 
     FOREIGN KEY (lectid) REFERENCES Lect);
 
-    DELIMITER $$
     CREATE TRIGGER CheckDuplicate
     BEFORE INSERT ON Enroll
     FOR EACH ROW
-    BEGIN
-        DELETE FROM Enroll
+        IF 
+        (SELECT COUNT(*) FROM Enroll
         WHERE lectid = NEW.lectid AND
             Enroll.enrollcount = NEW.enrollcount AND
             Enroll.timestamp = (SELECT MAX(timestamp) 
                                 FROM Enroll
-                                WHERE lectid = NEW.lectid)
-    END $$ DELIMITER;
+                                WHERE lectid = NEW.lectid)) = 0
+        THEN 
+        // INSERT; THIS IS A NEW ENROLLCOUNT
+        END IF
+

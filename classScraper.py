@@ -89,28 +89,51 @@ def main():
                 allEnroll = [e for e in crsSoup.find_all('td','dgdClassDataEnrollTotal')]
                 allCap = [c for c in crsSoup.find_all('td','dgdClassDataEnrollCap')]
                 print term+" "+subj+" "+courses[i]
-                cur.execute("INSERT INTO Course VALUES ("+str(courseId)+",'"+term+"','"+subj+"','"+courses[i]+"')")
+                try:
+                    cur.execute("INSERT INTO Course VALUES ("+str(courseId)+",'"+term+"','"+subj+"','"+courses[i]+"')")
+                except:
+                    print "Course already in table"
                 for j in range(len(profs)):
+                    # Ignore discussions (no bolded areas)
                     try:
                         print profs[j]
                         print allTimes[j].find("span","bold").string+" "+\
                             allDays[j].find("span","bold").string+" "+\
                             allEnroll[j].find("span","bold").string+"/"+\
                             allCap[j].find("span","bold").string
+                    except:
+                        continue
 
+                    # Check if the most recent entry into Enroll has the same
+                    # enrollcount; if there is none, there is a new enrollcount
+                    enr = allEnroll[j].find("span","bold").string
+                    try:
+                        cur.execute("SELECT COUNT(*) FROM Enroll WHERE lectid ="+str(lectId)+" AND enrollcount ="+enr+" AND timestamp = (SELECT MAX(timestamp) FROM Enroll E WHERE E.lectid = "+str(lectId)+")")
+                        ret = cur.fetchone()
+                    except:
+                        ret = ""
+                    # Add the new enrollcount, otherwise, do nothing
+                    if str(ret) == "(0L,)":
+                        print "Inserting new enrollcount"
+                        try:
+                            cur.execute("INSERT INTO Enroll VALUES ("+str(lectId)+",'"+\
+                        allEnroll[j].find("span","bold").string+\
+                        "',CURDATE())")
+                        except:
+                            print "Could not put enrollment into table"
+                    
+                    # Add the lecture time to Lect and increment lectId
+                    try:
                         cur.execute("INSERT INTO Lect VALUES ("+str(courseId)+","+str(lectId)+",'"+profs[j]+"','"+\
                             allTimes[j].find("span","bold").string+" "+\
                             allDays[j].find("span","bold").string+"','"+\
                             allCap[j].find("span","bold").string+"')")
-
-                        cur.execute("INSERT INTO Enroll VALUES ("+str(lectId)+",'"+\
-                        allEnroll[j].find("span","bold").string+\
-                        "',CURDATE())")
-                        
                         lectId += 1
-                            
                     except:
+                        print "Lecture time already in table"
+                        lectId += 1
                         continue
                 courseId += 1
+
 if __name__ == "__main__":
     main()
