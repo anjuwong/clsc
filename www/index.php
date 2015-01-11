@@ -1,0 +1,1 @@
+/Users/andrew/Sites/clsc/index.php

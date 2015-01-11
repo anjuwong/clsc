@@ -11,6 +11,7 @@ from HTMLParser import HTMLParser
 #<submit> btnGetClasses = ctl00_BodyContentPlaceHolder_SOCmain_btnGetClasses -> getBtn
 # for timestamps, only remember the most recent one if no change
 def main():
+    quarter = "15W"
     f = open("../mysqlinfo")
     usrnm = f.readline()[:-1]  
     psswd = f.readline()[:-1]
@@ -58,6 +59,8 @@ def main():
     # TODO: Ensure that the lectId and courseId are unique and constant
     for term in termVals:
         for subj in subjVals:
+            if not term == quarter:
+                continue
             if term == '141' or term == '15S':
                 continue
             if not subj == "COM SCI":
@@ -82,12 +85,16 @@ def main():
                 # Remove 3 characters from the prof name for &nlbs
                 profs = [str(fac.string[3:]) for fac in crsSoup.find_all('span','fachead')]
                 
+    # BUG: this finds all the discussions and only looks at the bold first
+    # it will check if the second is bold and it won't be (unless LAB, eg 35L)
+    # SHOULD BE: find all discussions and filter the bolds
+    #   Then look at the [j]
                 # all_ are lists of all the _ tags, not necessarily the first ones
                 # The first rows (class info, not disc info) are distinctly bolded
-                allTimes = [t for t in crsSoup.find_all('td','dgdClassDataTimeStart')]
-                allDays = [d for d in crsSoup.find_all('td','dgdClassDataDays')]
-                allEnroll = [e for e in crsSoup.find_all('td','dgdClassDataEnrollTotal')]
-                allCap = [c for c in crsSoup.find_all('td','dgdClassDataEnrollCap')]
+                allTimes = [t for t in crsSoup.find_all('td','dgdClassDataTimeStart') if t.find("span","bold")]
+                allDays = [d for d in crsSoup.find_all('td','dgdClassDataDays') if d.find("span","bold")]
+                allEnroll = [e for e in crsSoup.find_all('td','dgdClassDataEnrollTotal') if e.find("span","bold")]
+                allCap = [c for c in crsSoup.find_all('td','dgdClassDataEnrollCap') if c.find("span","bold")]
                 print term+" "+subj+" "+courses[i]
                 try:
                     cur.execute("INSERT INTO Course VALUES ("+str(courseId)+",'"+term+"','"+subj+"','"+courses[i]+"')")
