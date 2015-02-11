@@ -62,8 +62,11 @@ def main():
                 continue
             if term == '141':
                 continue
-            #if not subj == "COM SCI":
-            #    continue
+            if not (subj == "ENGR" or\
+                    subj == "STATS" or\
+                    subj == "EL ENGR" or\
+                    subj == "COM SCI"):
+                continue
             params = urllib.urlencode({'termsel':term,'subareasel':subj})
             crsRes = urllib.urlopen(deptUrl+"?"+params)
             crsSoup = BeautifulSoup(str(crsRes.read()))
