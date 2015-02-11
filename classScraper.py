@@ -2,7 +2,6 @@
 import MySQLdb
 import urllib
 from bs4 import BeautifulSoup
-from HTMLParser import HTMLParser
 
 #from selenium import webdriver
 #from selenium.webdriver.common.keys import Keys
@@ -11,8 +10,8 @@ from HTMLParser import HTMLParser
 #<submit> btnGetClasses = ctl00_BodyContentPlaceHolder_SOCmain_btnGetClasses -> getBtn
 # for timestamps, only remember the most recent one if no change
 def main():
-    quarter = "15W"
-    f = open("../mysqlinfo")
+    quarter = "15S"
+    f = open("/var/.mysqlinfo")
     usrnm = f.readline()[:-1]  
     psswd = f.readline()[:-1]
     con = MySQLdb.connect("localhost",usrnm,psswd,"registrar")
@@ -61,10 +60,10 @@ def main():
         for subj in subjVals:
             if not term == quarter:
                 continue
-            if term == '141' or term == '15S':
+            if term == '141':
                 continue
-            if not subj == "COM SCI":
-                continue
+            #if not subj == "COM SCI":
+            #    continue
             params = urllib.urlencode({'termsel':term,'subareasel':subj})
             crsRes = urllib.urlopen(deptUrl+"?"+params)
             crsSoup = BeautifulSoup(str(crsRes.read()))
@@ -80,15 +79,14 @@ def main():
             params = [urllib.urlencode({'termsel':term,'subareasel':subj,'idxcrs':course})\
                  for course in courses]
             for i in range(len(params)):
-                crsRes = urllib.urlopen(classUrl+"?"+params[i])
-                crsSoup = BeautifulSoup(str(crsRes.read()))
+                try:
+                    crsRes = urllib.urlopen(classUrl+"?"+params[i])
+                    crsSoup = BeautifulSoup(str(crsRes.read()))
+                except:
+                    continue
                 # Remove 3 characters from the prof name for &nlbs
                 profs = [str(fac.string[3:]) for fac in crsSoup.find_all('span','fachead')]
                 
-    # BUG: this finds all the discussions and only looks at the bold first
-    # it will check if the second is bold and it won't be (unless LAB, eg 35L)
-    # SHOULD BE: find all discussions and filter the bolds
-    #   Then look at the [j]
                 # all_ are lists of all the _ tags, not necessarily the first ones
                 # The first rows (class info, not disc info) are distinctly bolded
                 allTimes = [t for t in crsSoup.find_all('td','dgdClassDataTimeStart') if t.find("span","bold")]
@@ -98,6 +96,8 @@ def main():
                 print term+" "+subj+" "+courses[i]
                 try:
                     cur.execute("INSERT INTO Course VALUES ("+str(courseId)+",'"+term+"','"+subj+"','"+courses[i]+"')")
+                    con.commit()
+                    print "COMMITED COURSE TO DB @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
                 except:
                     print "Course already in table"
                 for j in range(len(profs)):
@@ -126,6 +126,8 @@ def main():
                             cur.execute("INSERT INTO Enroll VALUES ("+str(lectId)+",'"+\
                         allEnroll[j].find("span","bold").string+\
                         "',CURDATE())")
+                            con.commit()
+                            print "COMMITED ENROLLCOUNT TO DB @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
                         except:
                             print "Could not put enrollment into table"
                     
@@ -135,12 +137,13 @@ def main():
                             allTimes[j].find("span","bold").string+" "+\
                             allDays[j].find("span","bold").string+"','"+\
                             allCap[j].find("span","bold").string+"')")
+                        con.commit()
+                        print "COMMITED LECTURE TO DB @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
                         lectId += 1
                     except:
                         print "Lecture time already in table"
                         lectId += 1
                         continue
                 courseId += 1
-
 if __name__ == "__main__":
     main()

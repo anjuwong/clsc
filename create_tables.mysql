@@ -1,0 +1,22 @@
+CREATE TABLE Course 
+(courseid SMALLINT UNSIGNED NOT NULL, 
+term VARCHAR(8), 
+dept VARCHAR(16), 
+class VARCHAR(8), 
+PRIMARY KEY (courseid));
+
+CREATE TABLE Lect 
+(courseid SMALLINT UNSIGNED, 
+lectid MEDIUMINT UNSIGNED NOT NULL,
+prof VARCHAR(32),
+time VARCHAR(16), 
+enrolltotal SMALLINT UNSIGNED, 
+PRIMARY KEY (lectid), 
+FOREIGN KEY (courseid) REFERENCES Course ON DELETE CASCADE);
+
+CREATE TABLE Enroll 
+(lectid MEDIUMINT UNSIGNED, 
+enrollcount SMALLINT UNSIGNED, 
+timestamp DATE, 
+FOREIGN KEY (lectid) REFERENCES Lect);
+

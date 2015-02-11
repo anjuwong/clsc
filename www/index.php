@@ -8,12 +8,11 @@ Enrollment History
 <body>
 <h1>Enrollment History</h1>
 <p>View course enrollment as seen throughout the quarters.</p>
-
 <?php
 $db_hst = "localhost";
 $db_nam = "registrar";
 
-$sql_info = fopen("/Users/andrew/mysqlinfo","r");
+$sql_info = fopen("/var/.mysqlinfo","r");
 $db_usr = fgets($sql_info);
 $db_pss = fgets($sql_info);
 fclose($sql_info);
@@ -23,7 +22,6 @@ $db_usr = str_replace("\n","",$db_usr);
 $db_pss = str_replace("\n","",$db_pss);
 $db_con = mysqli_connect($db_hst,$db_usr,$db_pss);
 $db = mysqli_select_db($db_con,$db_nam);
-
 /* Form for picking term + dept */
 printf("<form action='index.php' method='get'>");
 

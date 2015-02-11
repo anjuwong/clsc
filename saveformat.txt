@@ -27,6 +27,7 @@ ENROLL: LectID,EnrollCount,Timestamp
     FOREIGN KEY: lectid
     ON UPDATE: check if most recent entry has same enrollcount
                 if not, insert
+    ** update not needed; handled in python
 
     CREATE TABLE Enroll 
     (lectid MEDIUMINT UNSIGNED, 
